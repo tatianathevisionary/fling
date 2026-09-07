@@ -36,6 +36,11 @@ public extension TVApp {
               package: "com.plexapp.android"),
         TVApp(name: "Tubi", link: "https://tubitv.com/",
               package: "com.tubitv"),
+        // Kick's TV build ships under the mobile package id; no custom
+        // scheme is documented, so the https app-link form is used pending
+        // hardware verification (FLING_LIVE_ATV_ACTION=app:https://kick.com).
+        TVApp(name: "Kick", link: "https://kick.com",
+              package: "com.kick.mobile"),
     ]
 
     /// Panel label for a foreground package: catalog name, else the last

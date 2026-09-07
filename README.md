@@ -108,7 +108,7 @@ HDMI-CEC.
 - **Now playing** — the header shows which app the TV has in the foreground
   ("Now: Netflix"), and that app lights up in the launcher grid.
 - **App launcher** — one click opens YouTube, Netflix, Prime Video, Disney+,
-  Spotify, Plex, or Tubi on the TV.
+  Spotify, Plex, Tubi, or Kick on the TV.
 - **D-pad** — arrows, OK, Back, Home. Navigate anything.
 - **Scroll to navigate** — two-finger scroll (or mouse wheel) anywhere over
   the open panel moves through the TV's rows and grids; horizontal scrolling
