@@ -148,4 +148,24 @@ final class AndroidTVVoiceTests: XCTestCase {
         XCTAssertEqual(ATVRemoteMessage.voiceChunkMinSize, 8 * 1024)
         XCTAssertEqual(ATVRemoteMessage.voiceChunkSize, 20 * 1024)
     }
+
+    func test_parses_incoming_volume_level() throws {
+        // remote_set_volume_level(50){ volume_max=100, volume_level=25, volume_muted=true }
+        let msg = try ATVRemoteMessage.parse(ATVTestHex.data("920306306438194001"))
+        XCTAssertEqual(msg.volume?.level, 25)
+        XCTAssertEqual(msg.volume?.max, 100)
+        XCTAssertEqual(msg.volume?.muted, true)
+    }
+
+    func test_volume_unmuted_omits_the_flag() throws {
+        // proto3 leaves muted=false out: { volume_max=100, volume_level=25 }
+        let msg = try ATVRemoteMessage.parse(ATVTestHex.data("92030430643819"))
+        XCTAssertEqual(msg.volume?.level, 25)
+        XCTAssertEqual(msg.volume?.muted, false)
+    }
+
+    func test_no_volume_without_the_message() throws {
+        let msg = try ATVRemoteMessage.parse(ATVTestHex.data("4200"))  // a ping request
+        XCTAssertNil(msg.volume)
+    }
 }

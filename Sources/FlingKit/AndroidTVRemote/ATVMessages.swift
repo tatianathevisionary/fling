@@ -297,7 +297,7 @@ enum ATVRemoteMessage {
         /// authorizing an audio stream.
         var voiceBeginSessionId: UInt64?
         /// RemoteSetVolumeLevel.{volume_level, volume_max, volume_muted} — the
-        /// TV's own volume, pushed on connect and on every change (port).
+        /// TV's own volume, pushed on connect and on every change.
         var volume: (level: Int, max: Int, muted: Bool)?
     }
 
