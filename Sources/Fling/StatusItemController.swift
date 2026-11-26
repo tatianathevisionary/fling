@@ -12,6 +12,7 @@ final class StatusItemController: NSObject {
     private var cancellables = Set<AnyCancellable>()
     private var pollTimer: Timer?
     private var scrollRemote: ScrollRemote?
+    private var keyRemote: KeyRemote?
 
     init(state: AppState) {
         self.state = state
@@ -41,6 +42,11 @@ final class StatusItemController: NSObject {
         updateTitle()
         startPolling()
         scrollRemote = ScrollRemote(state: state) { [weak popover] event in
+            guard let popover, popover.isShown else { return false }
+            return event.window === popover.contentViewController?.view.window
+        }
+        // The Mac keyboard drives the TV while the panel is open (KeyRemote.swift)
+        keyRemote = KeyRemote(state: state) { [weak popover] event in
             guard let popover, popover.isShown else { return false }
             return event.window === popover.contentViewController?.view.window
         }
