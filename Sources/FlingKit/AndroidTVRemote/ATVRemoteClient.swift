@@ -11,6 +11,8 @@ public actor ATVRemoteClient {
         /// Foreground app package, or nil when it goes away. Requires the IME
         /// feature (negotiated by default).
         case appChanged(String?)
+        /// The TV's own volume on its own scale (RemoteSetVolumeLevel).
+        case volumeChanged(level: Int, max: Int, muted: Bool)
         case disconnected
     }
 
@@ -328,6 +330,7 @@ public actor ATVRemoteClient {
             }
         }
         if let counter = message.imeCounter { imeCounter = counter }
+        if let v = message.volume { emit(.volumeChanged(level: v.level, max: v.max, muted: v.muted)) }
         if let fieldCounter = message.imeFieldCounter { imeFieldCounter = fieldCounter }
         if let sessionId = message.voiceBeginSessionId, let cont = voiceBeginContinuation {
             voiceBeginContinuation = nil
