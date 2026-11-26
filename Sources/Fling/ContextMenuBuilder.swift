@@ -59,6 +59,7 @@ struct ContextMenuBuilder {
         login.state = LoginItem.isEnabled ? .on : .off
         menu.addItem(login)
 
+        menu.addItem(action(Lang.switchTitle) { Lang.toggle() })
         menu.addItem(action("Quit Fling", key: "q", modifiers: [.command]) {
             NSApp.terminate(nil)
         })
@@ -72,7 +73,7 @@ struct ContextMenuBuilder {
                         modifiers: NSEvent.ModifierFlags = [],
                         enabled: Bool = true,
                         handler: @escaping () -> Void) -> NSMenuItem {
-        let item = NSMenuItem(title: title, action: #selector(Trampoline.fire), keyEquivalent: key)
+        let item = NSMenuItem(title: tr(title), action: #selector(Trampoline.fire), keyEquivalent: key)
         item.keyEquivalentModifierMask = modifiers
         item.isEnabled = enabled
         let trampoline = Trampoline(handler)
@@ -82,7 +83,7 @@ struct ContextMenuBuilder {
     }
 
     private func submenu(_ title: String, items: [NSMenuItem]) -> NSMenuItem {
-        let parent = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        let parent = NSMenuItem(title: tr(title), action: nil, keyEquivalent: "")
         let sub = NSMenu()
         sub.autoenablesItems = false
         items.forEach { sub.addItem($0) }

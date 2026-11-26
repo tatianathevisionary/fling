@@ -7,10 +7,10 @@ struct OnboardingView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text("Fling needs permission")
+            Text(tr("Fling needs permission"))
                 .font(.system(size: 13, weight: .semibold))
 
-            Text("macOS asks separately for each app. Fling needs \(list) so it can read the address of your frontmost tab.")
+            Text(tr("macOS asks separately for each app. Fling needs \(list) so it can read the address of your frontmost tab."))
                 .font(.system(size: 11.5))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -18,15 +18,15 @@ struct OnboardingView: View {
             ForEach(missing) { browser in
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
-                    Text(browser.displayName)
+                    Text(tr(browser.displayName))
                 }
                 .font(.system(size: 12))
             }
 
             HStack(spacing: 8) {
                 // Re-probing is what raises the system consent dialog per app.
-                Button("Grant access") { Task { await onRecheck() } }
-                Button("Open Settings") { PermissionProbe.openAutomationSettings() }
+                Button(tr("Grant access")) { Task { await onRecheck() } }
+                Button(tr("Open Settings")) { PermissionProbe.openAutomationSettings() }
             }
             .font(.system(size: 11.5))
         }
