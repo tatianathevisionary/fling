@@ -93,6 +93,10 @@ private enum RU {
         "Pair": "Связать",
         "Cancel": "Отмена",
         "No device found": "ТВ не найден",
+        "Online": "В сети",
+        "Offline": "Не в сети",
+        "Offline — Fling can't reach this TV": "Не в сети — Fling не достаёт до этого ТВ",
+        "Checking…": "Проверяю связь…",
         "Switch": "Сменить",
         // remote
         "Contacting TV…": "Связываюсь с ТВ…",
@@ -184,6 +188,7 @@ private enum RU {
         (#"^Volume — (\d+)%$"#, "Громкость — $1%"),
         (#"^Now: (.+)$"#, "Сейчас: $1"),
         (#"^Resume on TV at (.+)$"#, "Возобновить на ТВ с $1"),
+        (#"^“(.+)” is offline — switch to “(.+)”$"#, "«$1» не в сети — переключиться на «$2»"),
         (#"^Turn on (.+) ▸ Develop ▸ Allow JavaScript from Apple Events to resume videos where you left off\.$"#,
          "Включите в $1 ▸ Разработка ▸ «Разрешить JavaScript из событий Apple», чтобы видео продолжалось с того же места."),
         (#"^macOS asks separately for each app\. Fling needs (.+) so it can read the address of your frontmost tab\.$"#,

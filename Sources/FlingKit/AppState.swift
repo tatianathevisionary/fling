@@ -42,6 +42,17 @@ public final class AppState: ObservableObject {
     private var tvVolumeTask: Task<Void, Never>?
     /// True while the Mac microphone is streaming to the TV's voice search.
     @Published public private(set) var tvVoiceActive = false
+    /// Which known TVs answer right now (ip → online); absent = not checked yet.
+    @Published public private(set) var tvOnline: [String: Bool] = [:]
+    /// Another known TV that answers while the chosen one is offline.
+    @Published public private(set) var suggestedDevice: DeviceInfo?
+    private var switchAdvisor = SwitchAdvisor()
+    private var lastOnlineCheck: Date?
+    private var checkingOnline = false
+    /// The TV search succeeded once this run; until then it is retried.
+    private var scanned = false
+    private var lastScanTry: Date?
+    private let deviceMemory: DeviceMemory?
     /// What the current tab's page is actually playing, from the in-page probe.
     @Published public private(set) var tabMedia: TabMedia?
     /// Browser whose "Allow JavaScript from Apple Events" toggle is off.
@@ -69,13 +80,22 @@ public final class AppState: ObservableObject {
     /// Seek step in seconds; UI labels derive from it so they can't drift.
     public static let seekStep = 30
 
+    /// `deviceMemory` keeps the chosen and known TVs across launches; the
+    /// default is nil outside the app bundle, so tests never touch the user's.
     public init(catt: CattClient?, browsers: BrowserReader, atv: AndroidTVRemote? = nil,
-                prober: TabProber? = nil) {
+                prober: TabProber? = nil, deviceMemory: DeviceMemory? = .standard) {
         self.catt = catt
         self.browsers = browsers
         self.atv = atv
         self.prober = prober
+        self.deviceMemory = deviceMemory
         self.panel = catt == nil ? .setupNeeded : .idleNotCastable(reason: "No page open")
+        // The TV chosen before a restart (an update) is still the one in use.
+        if let saved = deviceMemory?.load() {
+            devices = DeviceMemory.merge(found: nil, known: saved.known, selected: saved.selected).devices
+            selectedDevice = saved.selected ?? saved.known.first
+            refreshTVPaired()
+        }
     }
 
     // MARK: - derived labels
@@ -148,7 +168,9 @@ public final class AppState: ObservableObject {
         // catt takes an IP directly and skips mDNS discovery; targeting by
         // name re-resolves every call and intermittently misses.
         let knownDevice = self.selectedDevice?.ip
-        let needsScan = self.devices.isEmpty
+        // Known TVs from the last run don't skip the search; a failed one is
+        // retried, at most every 30 s.
+        let needsScan = !scanned && (devices.isEmpty || lastScanTry.map { Date().timeIntervalSince($0) > 30 } ?? true)
 
         let fast = await Task.detached(priority: .userInitiated) { () -> RefreshResult in
             let running = Browser.allCases.filter { browsers.isRunning($0) }
@@ -179,13 +201,22 @@ public final class AppState: ObservableObject {
         tabMedia = fast.media
         probeHint = fast.probeHint
         apply(tab: fast.tab, status: fast.status)
+        Task { await self.checkOnline() }
 
         guard needsScan else { return }
+        lastScanTry = Date()
         let found = await Task.detached(priority: .userInitiated) { try? catt.scan() }.value
-        guard gen == interactionGeneration, let found, !found.isEmpty else { return }
-        devices = found
-        if selectedDevice == nil { selectedDevice = found.first }
+        guard gen == interactionGeneration else { return }
+        // A failed search keeps the known TVs; a chosen TV that didn't answer
+        // stays chosen (shown offline).
+        if let found, !found.isEmpty { scanned = true }
+        let merged = DeviceMemory.merge(found: found, known: devices, selected: selectedDevice)
+        guard !merged.devices.isEmpty else { return }
+        devices = merged.devices
+        selectedDevice = merged.selected
+        deviceMemory?.save(selected: selectedDevice, known: devices)
         refreshTVPaired()
+        Task { await self.checkOnline(force: true) }
         if knownDevice == nil, let ip = selectedDevice?.ip {
             let status = await Task.detached(priority: .userInitiated) {
                 try? catt.status(device: ip)
@@ -249,8 +280,11 @@ public final class AppState: ObservableObject {
         interactionGeneration += 1
         selectedDevice = device
         lastError = nil
-        // A retry wait for the previous TV ends now.
+        // A retry wait for the previous TV ends now; the choice survives a restart.
         await atv?.stopReconnecting()
+        switchAdvisor.reset()
+        suggestedDevice = nil
+        deviceMemory?.save(selected: device, known: devices)
         refreshTVPaired()
         await refresh()
     }
@@ -485,9 +519,40 @@ public final class AppState: ObservableObject {
         }
     }
 
+    /// Which known TVs answer: the footer dot and the one-click switch offer.
+    /// At most every 6 s (the panel refreshes every 2 s while open).
+    public func checkOnline(force: Bool = false) async {
+        guard !checkingOnline else { return }
+        if !force, let last = lastOnlineCheck, Date().timeIntervalSince(last) < 6 { return }
+        let hosts = devices.map(\.ip)
+        guard !hosts.isEmpty else { return }
+        checkingOnline = true
+        defer { checkingOnline = false }
+        lastOnlineCheck = Date()
+        let results = await withTaskGroup(of: (String, Bool).self) { group -> [String: Bool] in
+            for host in hosts {
+                group.addTask { (host, await TVReachability.isReachable(host: host)) }
+            }
+            var online: [String: Bool] = [:]
+            for await (host, ok) in group { online[host] = ok }
+            return online
+        }
+        tvOnline.merge(results) { $1 }
+        let paired = Set(hosts.filter { atv?.hasPairing(host: $0) == true })
+        let alt = switchAdvisor.suggestion(current: selectedDevice, devices: devices,
+                                           online: tvOnline, preferred: paired)
+        if alt != suggestedDevice {
+            if let alt, let cur = selectedDevice {
+                ATVLog.shared.log("app", "\(cur.name) is offline, \(alt.name) answers: offering it")
+            }
+            suggestedDevice = alt
+        }
+    }
+
     private func atvSessionConnected() {
         if lastError == TVConnectionText.reconnecting { lastError = nil }
         if !tvPaired { refreshTVPaired() }
+        if let ip = selectedDevice?.ip { tvOnline[ip] = true }
     }
 
     /// The TV pushes power flips over the open session; without this the row

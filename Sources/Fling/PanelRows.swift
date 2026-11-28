@@ -227,24 +227,57 @@ struct TVPinEntry: View {
 struct DeviceFooter: View {
     @ObservedObject var state: AppState
 
+    private var online: Bool? { state.selectedDevice.flatMap { state.tvOnline[$0.ip] } }
+    private var dotColor: Color {
+        guard state.selectedDevice != nil else { return .secondary }
+        switch online {
+        case true?: return .green
+        case false?: return .red
+        case nil: return .secondary
+        }
+    }
+    private var dotHelp: String {
+        guard state.selectedDevice != nil else { return "" }
+        switch online {
+        case true?: return tr("Online")
+        case false?: return tr("Offline — Fling can't reach this TV")
+        case nil: return tr("Checking…")
+        }
+    }
+
     var body: some View {
-        HStack(spacing: 7) {
-            Circle()
-                .fill(state.selectedDevice == nil ? Color.secondary : Color.green)
-                .frame(width: 6, height: 6)
-            Text(tr(state.selectedDevice?.name ?? "No device found"))
-                .font(.system(size: 11.5))
-                .lineLimit(1)
-            Spacer()
-            if state.devices.count > 1 {
-                Menu(tr("Switch")) {
-                    ForEach(state.devices) { device in
-                        Button(tr(device.name)) { Task { await state.select(device: device) } }
-                    }
+        VStack(alignment: .leading, spacing: 4) {
+            // The TV in use is offline and another known TV answers: one click.
+            if let alt = state.suggestedDevice, let cur = state.selectedDevice {
+                Button(tr("“\(cur.name)” is offline — switch to “\(alt.name)”")) {
+                    Task { await state.select(device: alt) }
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
+                .buttonStyle(.plain)
                 .font(.system(size: 11))
+                .foregroundStyle(Color.accentColor)
+            }
+            HStack(spacing: 7) {
+                // A real check: green answers, red doesn't, grey not checked yet.
+                Circle()
+                    .fill(dotColor)
+                    .frame(width: 6, height: 6)
+                Text(tr(state.selectedDevice?.name ?? "No device found"))
+                    .font(.system(size: 11.5))
+                    .lineLimit(1)
+                    .help(dotHelp)
+                Spacer()
+                if state.devices.count > 1 {
+                    Menu(tr("Switch")) {
+                        ForEach(state.devices) { device in
+                            Button(tr(device.name) + (state.tvOnline[device.ip] == false ? " — " + tr("Offline") : "")) {
+                                Task { await state.select(device: device) }
+                            }
+                        }
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    .font(.system(size: 11))
+                }
             }
         }
         .padding(.horizontal, 14)
