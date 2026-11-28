@@ -63,6 +63,13 @@ a custom scheme; use `https` only if the app verifies its domain on-device;
 avoid `market://` — it does not launch apps on TCL. Verify with the live
 driver: `FLING_LIVE_ATV_ACTION=app:<link>`.
 
+The catalog is also the default set of each TV's favourites
+(`FavoriteApps`), so a new entry shows up for anyone who hasn't edited
+theirs. A favourite added by package has no link: `RemoteExtras.open` sends
+`market://launch?id=…` as a last resort and, when the TV's foreground app
+doesn't change to it, says so in `lastError` — a catalog entry with a
+verified link is the real fix.
+
 ## Conventions
 
 - Comments state constraints the code can't show — no narration, no

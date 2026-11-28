@@ -104,11 +104,17 @@ Every session writes to `~/Library/Logs/Fling.log`:
 - **App links**: custom schemes (`netflix://`, `vnd.youtube.launch://`,
   `spotify://`) launch directly; `https` links work only when the app has
   verified its domain (Tubi); `market://launch?id=…` opens nothing useful on
-  TCL. The catalog in `TVApp.swift` records the verified forms.
+  TCL. The catalog in `TVApp.swift` records the verified forms. Favourites
+  added by package have only the `market://` form, so after launching one
+  Fling checks the foreground app the TV reports and explains when it
+  didn't open.
 - **Power state is a lie on standby-networked sets**: TCL's Quick
   Start/Network Standby keeps the remote service running, so `RemoteStart`
   reports started even with the panel dark. The power key works; the state
   flag reflects service availability, not electrons
   ([HA integration notes](https://www.home-assistant.io/integrations/androidtv_remote/)).
+  So the explicit Turn on / Turn off and the sleep timer send the one-way
+  `KEYCODE_WAKEUP` / `KEYCODE_SLEEP` instead of toggling `POWER` (not yet
+  verified on hardware).
 - **IME text** lands only when a text field is focused on-screen; the TV
   silently drops edits otherwise.
