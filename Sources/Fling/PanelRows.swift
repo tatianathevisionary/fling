@@ -122,12 +122,12 @@ struct MenuRow: View {
                         .foregroundStyle(accented ? Color.accentColor : Color.secondary)
                         .frame(width: 15)
                 }
-                Text(title)
+                Text(tr(title))
                     .foregroundStyle(accented ? Color.accentColor : Color.primary)
                     .fontWeight(accented ? .semibold : .regular)
                 Spacer(minLength: 8)
                 if let shortcut {
-                    Text(shortcut).foregroundStyle(.tertiary)
+                    Text(tr(shortcut)).foregroundStyle(.tertiary)
                 }
             }
             .font(.system(size: 12.5))
@@ -161,7 +161,7 @@ struct VolumeRow: View {
                 set: { state.setVolume(Int($0.rounded())) }
             ))
 
-            Text("\(state.volume)")
+            Text(tr("\(state.volume)"))
                 .font(.system(size: 10.5).monospacedDigit())
                 .foregroundStyle(.tertiary)
                 .frame(width: 20, alignment: .trailing)
@@ -176,7 +176,7 @@ struct SectionLabel: View {
     let text: String
 
     var body: some View {
-        Text(text)
+        Text(tr(text))
             .font(.system(size: 9.5, weight: .bold))
             .tracking(0.8)
             .foregroundStyle(.secondary)
@@ -194,21 +194,22 @@ struct TVPinEntry: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Enter the code on the TV screen")
+            Text(tr("Enter the code on the TV screen"))
                 .font(.system(size: 11.5)).foregroundStyle(.secondary)
             HStack(spacing: 6) {
-                TextField("A1B2C3", text: $pin)
+                TextField(tr("A1B2C3"), text: $pin)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 12, design: .monospaced))
                     .disabled(verifying)
                     .onSubmit { submit() }
+                    .onChange(of: pin) { _, v in let c = pinClean(v); if c != v { pin = c } }
                 if verifying {
                     ProgressView().controlSize(.small)
                 } else {
-                    Button("Pair") { submit() }
+                    Button(tr("Pair")) { submit() }
                         .font(.system(size: 11.5))
                         .disabled(code.count != 6)
-                    Button("Cancel") { Task { await state.cancelTVPairing() } }
+                    Button(tr("Cancel")) { Task { await state.cancelTVPairing() } }
                         .font(.system(size: 11.5))
                 }
             }
@@ -231,14 +232,14 @@ struct DeviceFooter: View {
             Circle()
                 .fill(state.selectedDevice == nil ? Color.secondary : Color.green)
                 .frame(width: 6, height: 6)
-            Text(state.selectedDevice?.name ?? "No device found")
+            Text(tr(state.selectedDevice?.name ?? "No device found"))
                 .font(.system(size: 11.5))
                 .lineLimit(1)
             Spacer()
             if state.devices.count > 1 {
-                Menu("Switch") {
+                Menu(tr("Switch")) {
                     ForEach(state.devices) { device in
-                        Button(device.name) { Task { await state.select(device: device) } }
+                        Button(tr(device.name)) { Task { await state.select(device: device) } }
                     }
                 }
                 .menuStyle(.borderlessButton)
@@ -262,7 +263,7 @@ struct SourcePicker: View {
         HStack(spacing: 3) {
             ForEach(options) { browser in
                 let selected = state.activeBrowser == browser
-                Button(browser.displayName) { Task { await state.select(browser: browser) } }
+                Button(tr(browser.displayName)) { Task { await state.select(browser: browser) } }
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: selected ? .semibold : .regular))
                     .foregroundStyle(selected ? Color.accentColor : Color.secondary)

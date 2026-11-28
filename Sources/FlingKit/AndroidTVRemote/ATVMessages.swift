@@ -166,6 +166,7 @@ enum ATVRemoteMessage {
         static let remoteVoicePayload = 31
         static let remoteVoiceEnd = 32
         static let remoteStart = 40
+        static let remoteSetVolumeLevel = 50
         static let remoteAppLinkLaunch = 90
     }
 
@@ -295,6 +296,9 @@ enum ATVRemoteMessage {
         /// RemoteVoiceBegin.session_id — the TV's answer to KEYCODE_SEARCH,
         /// authorizing an audio stream.
         var voiceBeginSessionId: UInt64?
+        /// RemoteSetVolumeLevel.{volume_level, volume_max, volume_muted} — the
+        /// TV's own volume, pushed on connect and on every change.
+        var volume: (level: Int, max: Int, muted: Bool)?
     }
 
     static func parse(_ data: Data) throws -> Inbound {
@@ -322,6 +326,9 @@ enum ATVRemoteMessage {
         }
         if let voice = try reader.message(Field.remoteVoiceBegin) {
             msg.voiceBeginSessionId = voice.varint(1) ?? 0
+        }
+        if let vol = try reader.message(Field.remoteSetVolumeLevel) {
+            msg.volume = (Int(vol.varint(7) ?? 0), Int(vol.varint(6) ?? 0), (vol.varint(8) ?? 0) != 0)
         }
         msg.hasError = reader.has(Field.remoteError)
         return msg

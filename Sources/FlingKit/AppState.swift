@@ -34,6 +34,12 @@ public final class AppState: ObservableObject {
     @Published public private(set) var tvIsOn: Bool?
     /// Foreground app package the TV last reported, nil when unknown.
     @Published public private(set) var tvCurrentApp: String?
+    /// The TV's own volume as it reports it; nil when it doesn't
+    /// (sound through a soundbar / receiver, some makers).
+    @Published public private(set) var tvVolume: TVVolume?
+    /// Where the slider asked the TV volume to go while the walk runs.
+    @Published public private(set) var tvVolumeTarget: Int?
+    private var tvVolumeTask: Task<Void, Never>?
     /// True while the Mac microphone is streaming to the TV's voice search.
     @Published public private(set) var tvVoiceActive = false
     /// What the current tab's page is actually playing, from the in-page probe.
@@ -357,6 +363,34 @@ public final class AppState: ObservableObject {
         await sendATV { atv, host in try await atv.pressKey(code, host: host) }
     }
 
+    /// Walk the TV volume to `level` with
+    /// VOLUME_UP / VOLUME_DOWN — the remote protocol has no "set level". One
+    /// step per answer from the TV so a slow TV doesn't overshoot; a newer
+    /// target replaces the walk; stops if the TV ignores three steps.
+    public func setTVVolume(_ level: Int) {
+        guard let v = tvVolume else { return }
+        let target = min(v.max, max(0, level))
+        tvVolumeTarget = target
+        tvVolumeTask?.cancel()
+        tvVolumeTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(150))      // until the slider settles
+            var stuck = 0
+            for _ in 0..<200 {
+                guard !Task.isCancelled, let self, let now = self.tvVolume?.level else { return }
+                if now == target { self.tvVolumeTarget = nil; return }
+                await self.pressTVKey(target > now ? ATVKeyCode.volumeUp : ATVKeyCode.volumeDown)
+                var moved = false
+                for _ in 0..<20 {
+                    try? await Task.sleep(for: .milliseconds(20))
+                    if Task.isCancelled { return }
+                    if self.tvVolume?.level != now { moved = true; break }
+                }
+                stuck = moved ? 0 : stuck + 1
+                if stuck >= 3 { self.tvVolumeTarget = nil; return }   // limit / locked
+            }
+        }
+    }
+
     public func sendTVText(_ text: String) async {
         guard !text.isEmpty else { return }
         await sendATV { atv, host in try await atv.sendText(text, host: host) }
@@ -440,7 +474,12 @@ public final class AppState: ObservableObject {
                 case .connected: break
                 case .powerChanged(let on): self?.tvIsOn = on
                 case .appChanged(let package): self?.tvCurrentApp = package
+                case .volumeChanged(let level, let max, let muted):
+                    self?.tvVolume = max > 0 ? TVVolume(level: level, max: max, muted: muted) : nil
+                    if self?.tvVolumeTarget == level { self?.tvVolumeTarget = nil }
                 case .disconnected:
+                    self?.tvVolume = nil
+                    self?.tvVolumeTarget = nil
                     self?.tvIsOn = nil
                     self?.tvCurrentApp = nil
                 }

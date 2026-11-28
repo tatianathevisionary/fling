@@ -19,7 +19,7 @@ struct PanelView: View {
                     Separator()
                     RemoteView(state: state)
                     if let error = state.lastError {
-                        Text(error)
+                        Text(tr(error))
                             .font(.system(size: 10.5)).foregroundStyle(.orange)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 14).padding(.vertical, 4)
@@ -56,11 +56,11 @@ struct PanelView: View {
 
     private var setup: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Fling needs catt").font(.system(size: 13, weight: .semibold))
-            Text("The Cast engine isn't installed. Install it once and Fling will find it.")
+            Text(tr("Fling needs catt")).font(.system(size: 13, weight: .semibold))
+            Text(tr("The Cast engine isn't installed. Install it once and Fling will find it."))
                 .font(.system(size: 11.5)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Button("Copy install command") {
+            Button(tr("Copy install command")) {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString("uv tool install catt", forType: .string)
             }
@@ -84,17 +84,17 @@ struct PanelView: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(state.tab?.title.nilIfEmpty ?? "No page open")
+                Text(tr(state.tab?.title.nilIfEmpty ?? "No page open"))
                     .font(.system(size: 12.5, weight: .semibold))
                     .lineSpacing(1)
                     .lineLimit(2)
                 HStack(spacing: 4) {
-                    Text(host).foregroundStyle(.secondary)
-                    Text("·").foregroundStyle(.secondary)
+                    Text(tr(host)).foregroundStyle(.secondary)
+                    Text(tr("·")).foregroundStyle(.secondary)
                     if let reason {
-                        Text(reason).foregroundStyle(.orange)
+                        Text(tr(reason)).foregroundStyle(.orange)
                     } else {
-                        Text("castable").foregroundStyle(.green)
+                        Text(tr("castable")).foregroundStyle(.green)
                     }
                 }
                 .font(.system(size: 11))
@@ -116,7 +116,7 @@ struct PanelView: View {
             if let reason {
                 inlineWhy(reason)
             } else if let browser = state.probeHint {
-                Text("Turn on \(browser.displayName) ▸ Develop ▸ Allow JavaScript from Apple Events to resume videos where you left off.")
+                Text(tr("Turn on \(browser.displayName) ▸ Develop ▸ Allow JavaScript from Apple Events to resume videos where you left off."))
                     .font(.system(size: 10)).foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 14).padding(.bottom, 6)
@@ -141,6 +141,7 @@ struct PanelView: View {
             MenuRow(title: LoginItem.isEnabled ? "✓ Open at Login" : "Open at Login") {
                 LoginItem.toggle()
             }
+            MenuRow(title: Lang.switchTitle) { Lang.toggle() }
             MenuRow(title: "Quit Fling", shortcut: "⌘Q") { NSApp.terminate(nil) }
             Separator()
         }
@@ -158,18 +159,18 @@ struct PanelView: View {
             artwork
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(state.status.title ?? "Playing")
+                Text(tr(state.status.title ?? "Playing"))
                     .font(.system(size: 12.5, weight: .semibold)).lineLimit(2)
-                Text(host).font(.system(size: 11)).foregroundStyle(.secondary)
+                Text(tr(host)).font(.system(size: 11)).foregroundStyle(.secondary)
             }
             .padding(.horizontal, 14).padding(.top, 10)
 
             VStack(spacing: 5) {
                 SlimProgress(value: state.progress)
                 HStack {
-                    Text(state.elapsedLabel)
+                    Text(tr(state.elapsedLabel))
                     Spacer()
-                    Text(state.remainingLabel)
+                    Text(tr(state.remainingLabel))
                 }
                 .font(.system(size: 10.5).monospacedDigit())
                 .foregroundStyle(.tertiary)
@@ -204,7 +205,7 @@ struct PanelView: View {
 
     // The failure explains itself in place, next to the row that is disabled.
     private func inlineWhy(_ reason: String) -> some View {
-        Text(explanation(for: reason))
+        Text(tr(explanation(for: reason)))
             .font(.system(size: 11))
             .foregroundStyle(.orange)
             .fixedSize(horizontal: false, vertical: true)
