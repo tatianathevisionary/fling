@@ -50,6 +50,11 @@ struct ContextMenuBuilder {
             return item
         }))
 
+        if state.selectedDevice != nil {
+            menu.addItem(.separator())
+            remoteItems().forEach { menu.addItem($0) }
+        }
+
         menu.addItem(.separator())
         menu.addItem(action("Stop casting", key: ".", modifiers: [.command],
                             enabled: casting) { Task { await state.stopCasting() } })
@@ -66,6 +71,33 @@ struct ContextMenuBuilder {
         return menu
     }
 
+    /// Scenes and the sleep timer, so neither needs the panel opened at night.
+    private func remoteItems() -> [NSMenuItem] {
+        let extras = state.remoteExtras
+        var scenes = extras.scenes.map { scene in verbatim(scene.name) { extras.run(scene) } }
+        if scenes.isEmpty { scenes.append(action("No scenes yet", enabled: false) {}) }
+        if let running = extras.runningScene {
+            scenes.append(.separator())
+            scenes.append(action(tr("Stop the scene: ") + running) { extras.stopScene() })
+        }
+        scenes.append(.separator())
+        scenes.append(action("New scene…") { SceneEditorWindow.open(extras, scene: nil) })
+        if !extras.scenes.isEmpty {
+            scenes.append(submenu("Edit", items: extras.scenes.map { scene in
+                verbatim(scene.name) { SceneEditorWindow.open(extras, scene: scene) }
+            }))
+        }
+
+        var timer = SleepTimer.choices.map { m in action("\(m) min") { extras.setSleep(minutes: m) } }
+        if extras.sleepDeadline != nil {
+            timer.append(.separator())
+            timer.append(action("Cancel the timer") { extras.setSleep(minutes: nil) })
+        }
+        var timerTitle = tr("Sleep timer")
+        if let left = extras.sleepMinutesLeft { timerTitle += " — " + tr("\(left) min") }
+        return [submenu("Scenes", items: scenes), submenu(timerTitle, items: timer)]
+    }
+
     // MARK: - helpers
 
     private func action(_ title: String,
@@ -79,6 +111,13 @@ struct ContextMenuBuilder {
         let trampoline = Trampoline(handler)
         item.target = trampoline
         item.representedObject = trampoline   // keeps the trampoline alive
+        return item
+    }
+
+    /// A user-named item (a scene): its title is never translated.
+    private func verbatim(_ title: String, handler: @escaping () -> Void) -> NSMenuItem {
+        let item = action(title, handler: handler)
+        item.title = title
         return item
     }
 

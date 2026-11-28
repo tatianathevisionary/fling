@@ -108,8 +108,16 @@ HDMI-CEC.
 - **Now playing** — the header shows which app the TV has in the foreground
   ("Now: Netflix"), and that app lights up in the launcher grid.
 - **App launcher** — one click opens YouTube, Netflix, Prime Video, Disney+,
-  Spotify, Plex, or Tubi on the TV.
-- **D-pad** — arrows, OK, Back, Home. Navigate anything.
+  Spotify, Plex, or Tubi on the TV. The grid is per TV: right-click a chip
+  to move, rename or remove it; **+** adds the app open on the TV, another
+  catalog app, or any package. Apps outside the catalog have no known app
+  link, and many TVs won't open an app by package — those chips are drawn
+  muted, and Fling tells you when the TV didn't open one.
+- **D-pad** — arrows, OK, Back, Home. Navigate anything. The switch under
+  the app grid swaps it for a **Touchpad** (drag for arrows, click = OK,
+  right-click = Back), **Numbers** (digits — the Mac's digit keys work too —
+  channel ±, Input, Guide, Info, Settings) or **Media** (track, seek,
+  stop, subtitles, audio track, colour buttons).
 - **Scroll to navigate** — two-finger scroll (or mouse wheel) anywhere over
   the open panel moves through the TV's rows and grids; horizontal scrolling
   moves sideways. Flick momentum is ignored so lists don't run away.
@@ -120,6 +128,11 @@ HDMI-CEC.
 - **Voice search** — click the mic, speak, click again. Your Mac microphone
   streams to the TV's voice search — same as talking into the TV remote.
   macOS asks for microphone access the first time.
+- **Scenes, sleep timer, on / off** — the **⋯** key beside power. A scene
+  runs steps in order (turn on, open an app, set the volume, press a
+  button, wait, start the sleep timer, turn off); the sleep timer turns the
+  TV off after 15 min – 2 h. Scenes and the timer are also in the menu-bar
+  icon's right-click menu.
 
 **More than one TV?** The panel footer shows the active device; a **Switch**
 menu appears when several are on the network. Pairing is per-TV.

@@ -46,6 +46,8 @@ public final class AppState: ObservableObject {
     @Published public private(set) var tabMedia: TabMedia?
     /// Browser whose "Allow JavaScript from Apple Events" toggle is off.
     @Published public private(set) var probeHint: Browser?
+    /// Favourite apps, scenes, the sleep timer and explicit on / off.
+    public private(set) lazy var remoteExtras = RemoteExtras(state: self)
 
     private let catt: CattClient?
     private let browsers: BrowserReader

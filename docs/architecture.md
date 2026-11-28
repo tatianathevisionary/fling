@@ -42,6 +42,12 @@ property the UI renders and every user action lives here. Its rules:
   panel line. Remote-protocol failures additionally log to
   `~/Library/Logs/Fling.log`.
 
+`RemoteExtras` (owned by AppState as `remoteExtras`) holds what sits on top
+of the remote session: per-TV favourite apps, scenes, the sleep timer and
+explicit on / off. It acts only through AppState's TV methods and reports
+through `lastError`, and it lives as long as AppState, so the sleep timer
+runs with the panel closed.
+
 ## Process boundary
 
 `ProcessRunning` is the seam for every subprocess. It returns a structured
@@ -75,7 +81,8 @@ section, with housekeeping and the device footer as fixed chrome — the
 footer is the last row in every state. `MenuRow`/`KeyButton`/`KeyPill` are
 the row/key primitives. The scroll-to-navigate gesture is an
 `NSEvent` local monitor (`ScrollRemote`) feeding a pure, unit-tested
-accumulator (`ScrollNav`) that discretizes trackpad deltas into d-pad steps.
+accumulator (`ScrollNav`) that discretizes trackpad deltas into d-pad steps;
+the remote's Touchpad page does the same for mouse drags (`TouchpadNav`).
 
 ## Threading model at a glance
 

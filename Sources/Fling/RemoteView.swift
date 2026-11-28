@@ -2,8 +2,9 @@ import SwiftUI
 import Combine
 import FlingKit
 
-/// The TV section of the panel: power, app launcher, d-pad, volume keys, and
-/// typing, all over the Android TV Remote session.
+/// The TV section of the panel: power, favourite apps, the remote pages
+/// (d-pad, touchpad, numbers, media), volume, typing, and the "⋯" menu
+/// (scenes, sleep timer, on / off), all over the Android TV Remote session.
 ///
 /// Typing is a keyboard button (live typing, send on Return, paste) rather than an
 /// always-visible field. Text goes through `sendTVText` / the Android TV Remote IME.
@@ -143,8 +144,9 @@ struct RemoteView: View {
     private var controls: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            appGrid
-            dpad
+            SleepTimerRow(state: state)                  // "the TV turns off in N min"
+            FavoriteAppsGrid(state: state)
+            RemoteModes(state: state) { dpad }           // Arrows · Touchpad · Numbers · Media
             if let vol = state.tvVolume {
                 TVVolumeRow(state: state, volume: vol)   // the TV reports its volume: a slider
             } else {
@@ -166,6 +168,7 @@ struct RemoteView: View {
             }
             Spacer()
             if showBadge { keyboardBadge }
+            RemoteMoreMenu(state: state)                 // scenes, sleep timer, on / off
             KeyButton(symbol: "power", size: 26, state: state, code: ATVKeyCode.power)
                 .help(tr(powerHelp))
         }
@@ -184,18 +187,6 @@ struct RemoteView: View {
         case false?: return "Turn TV on"
         case nil:    return "Toggle TV power"
         }
-    }
-
-    private var appGrid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4),
-                  spacing: 4) {
-            ForEach(TVApp.catalog) { app in
-                AppChip(name: app.name, active: app.package == state.tvCurrentApp) {
-                    Task { await state.launchTVApp(app) }
-                }
-            }
-        }
-        .padding(.horizontal, 12).padding(.bottom, 8)
     }
 
     /// Classic remote layout — Back and Home flank the OK row.
@@ -563,10 +554,12 @@ struct KeyPill: View {
     }
 }
 
-/// App launcher chip; `active` marks the app the TV reports as foreground.
+/// App launcher chip; `active` marks the app the TV reports as foreground,
+/// `muted` an app with no known app link (the TV may not open it).
 struct AppChip: View {
     let name: String
     var active = false
+    var muted = false
     let action: () -> Void
 
     @State private var hovering = false
@@ -575,7 +568,7 @@ struct AppChip: View {
         Button(action: action) {
             Text(tr(name))
                 .font(.system(size: 10.5, weight: active ? .semibold : .regular))
-                .foregroundStyle(active ? Color.accentColor : Color.primary)
+                .foregroundStyle(active ? Color.accentColor : muted ? Color.secondary : Color.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity)

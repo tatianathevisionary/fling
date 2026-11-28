@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Remote pages under the app grid — Arrows (the d-pad), Touchpad (drag for
+  arrows, click = OK, right-click = Back, middle-click = Home), Numbers
+  (digits, channel ±, Input, Guide, Info, Settings; the Mac's digit keys
+  type digits while it is open) and Media (previous / rewind / play-pause /
+  fast-forward / next, stop, subtitles, audio track, colour buttons). The
+  choice is remembered.
+- Favourite apps per TV: right-click a chip to move, rename or remove it;
+  "+" adds the app open on the TV, a catalog app or a package, or restores
+  the default set. Apps without a known app link are marked, and when the
+  TV doesn't open one the panel says so.
+- Scenes — named steps (turn on, open an app, TV volume, a remote button,
+  wait, sleep timer, turn off, optionally "switch to this TV first") with an
+  editor window; run them from the remote's "⋯" menu or the menu-bar icon's
+  right-click menu.
+- Sleep timer (15 min – 2 h) with a "the TV turns off in N min" strip, and
+  explicit Turn on / Turn off using the one-way WAKEUP / SLEEP keys.
+
 ## [1.0.0] - 2026-08-29
 
 ### Added

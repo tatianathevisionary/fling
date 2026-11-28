@@ -19,6 +19,32 @@ public enum ATVKeyCode {
     /// starts a voice interaction. Values from remotemessage.proto.
     public static let assist: Int32 = 219
     public static let voiceAssist: Int32 = 231
+    // Number pad, channel, media and colour keys for the remote's extra pages;
+    // the remote protocol sends Android KeyEvent codes as-is.
+    public static let mediaStop: Int32 = 86
+    public static let mediaNext: Int32 = 87
+    public static let mediaPrevious: Int32 = 88
+    public static let mediaRewind: Int32 = 89
+    public static let mediaFastForward: Int32 = 90
+    public static let info: Int32 = 165
+    public static let channelUp: Int32 = 166
+    public static let channelDown: Int32 = 167
+    public static let guide: Int32 = 172
+    public static let captions: Int32 = 175
+    public static let settings: Int32 = 176
+    public static let tvInput: Int32 = 178
+    public static let progRed: Int32 = 183
+    public static let progGreen: Int32 = 184
+    public static let progYellow: Int32 = 185
+    public static let progBlue: Int32 = 186
+    public static let mediaAudioTrack: Int32 = 222
+    /// One-way power keys: unlike `power` they never flip a TV the wrong way
+    /// when its reported power state is stale (see remote-protocol.md).
+    public static let sleep: Int32 = 223
+    public static let wakeUp: Int32 = 224
+
+    /// KEYCODE_0 … KEYCODE_9.
+    public static func digit(_ d: Int) -> Int32 { Int32(7 + min(9, max(0, d))) }
 }
 
 /// polo.proto `OuterMessage` — the pairing protocol on port 6467.

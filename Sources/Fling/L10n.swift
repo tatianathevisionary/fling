@@ -148,6 +148,65 @@ private enum RU {
         "Live typing is off — click to turn on": "Печать сразу выключена — нажмите, чтобы включить",
         "TV volume": "Громкость телевизора",
         "TV sound: click to mute / unmute": "Звук ТВ: щёлкните, чтобы выключить / включить",
+        // remote pages
+        "Arrows": "Стрелки", "Touchpad": "Тачпад", "Numbers": "Цифры", "Media": "Медиа",
+        "Remote: arrows, touchpad, number keys or media keys": "Пульт: стрелки, тачпад, цифры или медиаклавиши",
+        "Drag on the pad for arrows\nClick for OK, right-click for Back":
+            "Ведите по панели — стрелки\nЩелчок — OK, правая кнопка — Назад",
+        "Touchpad: drag for arrows, click for OK, right-click for Back, middle-click for Home":
+            "Тачпад: ведите — стрелки, щелчок — OK, правая кнопка — Назад, средняя — Домой",
+        "Channel +": "Канал +", "Channel −": "Канал −", "CH": "CH",
+        "Input": "Источник", "Input source (HDMI, antenna…)": "Источник сигнала (HDMI, антенна…)",
+        "Guide": "Телегид", "TV guide": "Телепрограмма",
+        "Info": "Инфо", "Programme info": "Сведения о передаче",
+        "Settings": "Настройки", "TV settings": "Настройки ТВ",
+        "Previous track": "Предыдущий трек", "Next track": "Следующий трек",
+        "Rewind": "Перемотка назад", "Fast-forward": "Перемотка вперёд",
+        "Play / Pause": "Пауза / Играть", "Stop": "Стоп",
+        "Subtitles": "Субтитры", "Audio track": "Звуковая дорожка",
+        "Red button": "Красная кнопка", "Green button": "Зелёная кнопка",
+        "Yellow button": "Жёлтая кнопка", "Blue button": "Синяя кнопка",
+        "Colour buttons — for TV channels and teletext": "Цветные кнопки — для телеканалов и телетекста",
+        // favourite apps
+        "Click to open on the TV, right-click to edit": "Щелчок — открыть на ТВ, правая кнопка — изменить",
+        "Move left": "Сдвинуть влево", "Move right": "Сдвинуть вправо",
+        "Rename…": "Переименовать…", "Remove": "Убрать",
+        "Add an app": "Добавить приложение",
+        "Open on the TV: ": "Открытое на ТВ: ",
+        "Enter a package…": "Указать пакет…",
+        "Restore the default set": "Вернуть стандартный набор",
+        "No more room — remove an app first.": "Мест больше нет — уберите какое-нибудь приложение.",
+        "App package, e.g. org.videolan.vlc": "Пакет приложения, например org.videolan.vlc",
+        "Button label": "Название на кнопке",
+        "Add": "Добавить", "Save": "Сохранить",
+        "That doesn't look like an Android package name.": "Это не похоже на имя пакета Android.",
+        "Apps open once Fling is paired with the TV.": "Открыть приложение можно, когда Fling связан с ТВ.",
+        // more menu, power, sleep timer
+        "More: scenes, sleep timer, power": "Ещё: сцены, таймер сна, включение",
+        "Turn on the TV": "Включить ТВ", "Turn off the TV": "Выключить ТВ",
+        "Sleep timer": "Таймер сна", "Cancel the timer": "Отменить таймер",
+        "The TV turns off in ": "ТВ выключится через ",
+        "Sleep timer cancelled: another TV was selected.": "Таймер сна отменён: выбран другой ТВ.",
+        "Can't turn the TV off: Fling isn't paired with it.": "Не могу выключить ТВ: Fling не связан с ним.",
+        // scenes
+        "Scenes": "Сцены", "No scenes yet": "Сцен пока нет", "New scene…": "Новая сцена…", "Edit": "Изменить",
+        "Stop the scene: ": "Остановить сцену: ",
+        "Movie night": "Вечер кино", "Fling — scene": "Fling — сцена", "Scene": "Сцена",
+        "A scene runs its steps in order: for example, it turns on the TV, opens an app and sets the volume. Run it from the “⋯” menu in the panel or from the menu-bar icon's right-click menu.":
+            "Сцена выполняет шаги по порядку: например, включает ТВ, открывает приложение и ставит громкость. Запустить её можно из меню «⋯» на панели или из меню значка в строке меню (правый щелчок).",
+        "Name": "Название", "Switch to this TV first: ": "Сначала переключиться на ТВ: ",
+        "Add a step": "Добавить шаг", "Up": "Выше", "Down": "Ниже", "Delete step": "Удалить шаг",
+        "Delete scene": "Удалить сцену", "Run": "Запустить",
+        "Delete the scene “": "Удалить сцену «", "”?": "»?",
+        "Open an app": "Открыть приложение", "Remote button": "Кнопка пульта", "Wait": "Подождать",
+        "Open: ": "Открыть: ", "TV volume: ": "Громкость ТВ: ", "Button: ": "Кнопка: ",
+        "Wait: ": "Подождать: ", "Sleep timer: ": "Таймер сна: ",
+        "Give the scene a name.": "Дайте сцене название.", "Add at least one step.": "Добавьте хотя бы один шаг.",
+    
+        "No app link known for this app — many TVs won't open it from here. Right-click to edit":
+            "Ссылка для открытия этого приложения неизвестна — многие ТВ не откроют его отсюда. Правая кнопка — изменить",
+        "Many TVs open only apps with their own app link (YouTube, Netflix…), not by package.":
+            "Многие ТВ открывают только приложения со своей ссылкой (YouTube, Netflix…), а по имени пакета — нет.",
         // errors (FlingKit)
         "Clipboard is empty": "Буфер обмена пуст",
         "No device selected": "Устройство не выбрано",
@@ -178,6 +237,16 @@ private enum RU {
          "Включите в $1 ▸ Разработка ▸ «Разрешить JavaScript из событий Apple», чтобы видео продолжалось с того же места."),
         (#"^macOS asks separately for each app\. Fling needs (.+) so it can read the address of your frontmost tab\.$"#,
          "macOS спрашивает отдельно для каждого приложения. Fling нужен доступ к $1, чтобы читать адрес открытой вкладки."),
+        (#"^(\d+) min$"#, "$1 мин"),
+        (#"^(\d+) s$"#, "$1 с"),
+        (#"^Scene “(.+)”: the TV doesn't report its volume — step skipped\.$"#,
+         "Сцена «$1»: ТВ не сообщает громкость — шаг пропущен."),
+        (#"^TV “(.+)” not found — the scene ran on the current TV\.$"#,
+         "ТВ «$1» не найден — сцена выполнена на текущем ТВ."),
+        (#"^The TV didn't open (.+): Fling knows no app link for it, and most TVs won't open an app by its package name\. Open it from the TV's home screen\.$"#,
+         "ТВ не открыл $1: ссылка для этого приложения неизвестна, а по имени пакета большинство ТВ приложения не открывают. Откройте его с главного экрана ТВ."),
+        (#"^The TV didn't open (.+): this TV doesn't accept the app's link\. Open it from the TV's home screen\.$"#,
+         "ТВ не открыл $1: этот ТВ не принимает ссылку приложения. Откройте его с главного экрана ТВ."),
     ].map { (try! NSRegularExpression(pattern: $0.0, options: [.dotMatchesLineSeparators]), $0.1) }
 
     /// Pieces the onboarding text builds its browser list from.
