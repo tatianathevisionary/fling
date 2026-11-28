@@ -27,6 +27,15 @@ public enum ATVError: Error, Equatable {
     case voiceSessionInactive
     /// The TV never answered KEYCODE_SEARCH with RemoteVoiceBegin.
     case voiceTimeout
+    /// The remote is waiting to retry a refused handshake with this TV; the
+    /// command was dropped instead of running seconds late.
+    case reconnecting
+    /// The command waited for a connect that needed a retry wait, so it was
+    /// dropped rather than delivered late. Nothing to tell the user.
+    case commandDropped
+    /// The connect was stopped on purpose (another TV chosen, pairing
+    /// started). Nothing to tell the user.
+    case superseded
 }
 
 /// App-facing facade over the Android TV Remote protocol v2 client: one-time
@@ -42,7 +51,25 @@ public actor AndroidTVRemote {
     private var lastHost: String?
     /// Single in-flight connect, joined by overlapping callers so a second
     /// connect can't tear down the first one's fresh session.
-    private var inflightConnect: (id: UUID, host: String, task: Task<Void, Error>)?
+    /// The task's result is true when the connect had to wait for a retry.
+    private var inflightConnect: (id: UUID, host: String, task: Task<Bool, Error>)?
+
+    // A TV that has just woken up or restarted can drop the first TLS
+    // handshakes, which looks exactly like "the TV forgot this Mac". For a
+    // paired TV, try again after these waits before believing it and
+    // dropping the pairing mark.
+    static let defaultRetryWaits: [TimeInterval] = [2, 4, 6]
+    /// After the TV refused this Mac, no retries / extra attempts for this long.
+    static let defaultRefusalMemory: TimeInterval = 60
+    private let retryWaits: [TimeInterval]
+    private let refusalMemory: TimeInterval
+    /// Host -> when the TV last refused this Mac (after the retries).
+    private var refusedAt: [String: Date] = [:]
+    /// Hosts whose pairing mark Fling dropped in this run: one later attempt
+    /// may still find the TV trusts the certificate, which restores the mark.
+    private var droppedMarks: Set<String> = []
+    /// The host a connect is waiting to retry, nil otherwise.
+    public private(set) var waitingHost: String?
 
     /// `enableVoice` negotiates the VOICE feature so `beginVoice`/`sendVoice`
     /// work. Off by default: once negotiated, KEYCODE_SEARCH puts the TV into
@@ -51,16 +78,21 @@ public actor AndroidTVRemote {
                 store: ATVCertificateStore = .shared,
                 enableVoice: Bool = false) {
         self.init(clientName: clientName, store: store,
-                  remote: ATVRemoteClient(store: store, enableVoice: enableVoice))
+                  remote: ATVRemoteClient(store: store, enableVoice: enableVoice),
+                  retryWaits: Self.defaultRetryWaits)
     }
 
     /// Test seam: a remote with an injected transport.
     init(clientName: String = "Fling",
          store: ATVCertificateStore = .shared,
-         remote: ATVRemoteClient) {
+         remote: ATVRemoteClient,
+         retryWaits: [TimeInterval] = AndroidTVRemote.defaultRetryWaits,
+         refusalMemory: TimeInterval = AndroidTVRemote.defaultRefusalMemory) {
         self.clientName = clientName
         self.store = store
         self.remote = remote
+        self.retryWaits = retryWaits
+        self.refusalMemory = refusalMemory
     }
 
     // MARK: - pairing
@@ -74,6 +106,7 @@ public actor AndroidTVRemote {
 
     /// When this returns, the TV is displaying a 6-hex-character PIN.
     public func startPairing(host: String) async throws {
+        stopReconnecting()                 // a retry wait for the old pairing is pointless now
         await pairing?.cancel()
         let client = ATVPairingClient(clientName: clientName, store: store)
         pairing = client
@@ -85,6 +118,8 @@ public actor AndroidTVRemote {
         guard let pairing, let pairingHost else { throw ATVError.pairingNotStarted }
         try await pairing.finish(pin: pin)
         store.recordPairedHost(pairingHost)
+        refusedAt[pairingHost] = nil
+        droppedMarks.remove(pairingHost)
         self.pairing = nil
         self.pairingHost = nil
     }
@@ -98,7 +133,15 @@ public actor AndroidTVRemote {
     // MARK: - remote session
 
     public func connect(host: String) async throws {
-        guard hasPairing(host: host) else { throw ATVError.notPaired }
+        _ = try await connectTracked(host: host)
+    }
+
+    /// `connect`, returning true when it had to wait for a retry — a command
+    /// that waited for it is stale by now.
+    func connectTracked(host: String) async throws -> Bool {
+        guard hasPairing(host: host) || mayTry(host: host) else { throw ATVError.notPaired }
+        // A press while the connect waits to retry would land 2–12 s late.
+        if waitingHost == host { throw ATVError.reconnecting }
         lastHost = host
         if let inflight = inflightConnect, inflight.host == host {
             return try await inflight.task.value
@@ -106,16 +149,86 @@ public actor AndroidTVRemote {
         if let inflight = inflightConnect {
             // A connect to a different host is settling; let it finish so two
             // teardowns can't interleave. Its outcome is that caller's to
-            // handle, not ours.
+            // handle, not ours. A retry wait for the other TV stops now.
+            inflight.task.cancel()
             _ = try? await inflight.task.value
         }
         let id = UUID()
-        let task = Task { [remote] in try await remote.connect(host: host) }
+        let task = Task { try await self.connectWithRetries(host: host) }
         inflightConnect = (id, host, task)
         // Identity-checked: while this call awaited, a joiner may have
         // resumed first and a later call registered its own attempt.
         defer { if inflightConnect?.id == id { inflightConnect = nil } }
-        try await task.value
+        return try await task.value
+    }
+
+    /// Not marked paired, but worth one attempt: Fling dropped the mark itself
+    /// earlier in this run, and the TV may trust this Mac all the same.
+    public func mayTry(host: String) -> Bool {
+        store.identityExists && droppedMarks.contains(host) && !recentlyRefused(host)
+    }
+
+    public func recentlyRefused(_ host: String) -> Bool {
+        guard let at = refusedAt[host] else { return false }
+        return Date().timeIntervalSince(at) < refusalMemory
+    }
+
+    /// Ends a retry wait at once (another TV chosen, pairing started).
+    public func stopReconnecting() {
+        guard waitingHost != nil else { return }
+        inflightConnect?.task.cancel()
+    }
+
+    /// The TLS refusal policy around `ATVRemoteClient.connect`.
+    private func connectWithRetries(host: String) async throws -> Bool {
+        let waits = hasPairing(host: host) && !recentlyRefused(host) ? retryWaits : []
+        var waited = false
+        var attempt = 0
+        while true {
+            do {
+                try await remote.connect(host: host)
+                break
+            } catch ATVError.tlsHandshakeFailed(let detail) {
+                if Task.isCancelled { throw ATVError.superseded }
+                guard attempt < waits.count else {
+                    refusedAt[host] = Date()
+                    if store.pairedHosts().contains(host) {
+                        // The TV really has forgotten this Mac: the panel offers "Pair with TV".
+                        store.removePairedHost(host)
+                        droppedMarks.insert(host)
+                        ATVLog.shared.log("remote", "\(host) refused this Mac after \(attempt + 1) attempts (\(detail)); pairing mark dropped")
+                    }
+                    throw ATVError.tlsHandshakeFailed(detail)
+                }
+                let wait = waits[attempt]
+                attempt += 1
+                ATVLog.shared.log("remote", "\(host) TLS refused (\(detail)); retry \(attempt)/\(waits.count) in \(wait) s")
+                waitingHost = host
+                do {
+                    try await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+                } catch {
+                    waitingHost = nil
+                    ATVLog.shared.log("remote", "\(host) retry wait stopped")
+                    throw ATVError.superseded
+                }
+                waitingHost = nil
+                waited = true
+                // Paired again or forgotten meanwhile: this attempt is no longer wanted.
+                guard hasPairing(host: host) else { throw ATVError.superseded }
+            } catch {
+                if Task.isCancelled { throw ATVError.superseded }
+                throw error
+            }
+        }
+        if !store.pairedHosts().contains(host) {
+            // The TV accepted the certificate, so it does trust this Mac: the
+            // mark was lost, not the pairing.
+            store.recordPairedHost(host)
+            ATVLog.shared.log("remote", "\(host) still trusts this Mac; pairing mark restored")
+        }
+        droppedMarks.remove(host)
+        refusedAt[host] = nil
+        return waited
     }
 
     /// Power state from the TV's last RemoteStart; meaningful once connected.
@@ -178,11 +291,13 @@ public actor AndroidTVRemote {
 
     /// Connects when disconnected — and also when connected to a *different*
     /// TV than requested, since sending there would steer the wrong device.
+    /// Throws `commandDropped` when the connect had to wait for a retry — the
+    /// command would arrive seconds after the press.
     private func ensureConnected(host: String?) async throws {
         if let host { lastHost = host }
         guard let target = lastHost else { throw ATVError.noHostConfigured }
         if await remote.isConnected, await remote.connectedHost == target { return }
-        try await connect(host: target)
+        if try await connectTracked(host: target) { throw ATVError.commandDropped }
     }
 
     /// androidtv_remote.py send_launch_app_command: a value without a URL scheme
