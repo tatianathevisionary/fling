@@ -144,7 +144,7 @@ struct RemoteView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             appGrid
-            dpad
+            RemoteModes(state: state) { dpad }           // Arrows · Touchpad · Numbers · Media
             if let vol = state.tvVolume {
                 TVVolumeRow(state: state, volume: vol)   // the TV reports its volume: a slider
             } else {

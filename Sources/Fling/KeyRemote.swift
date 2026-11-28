@@ -6,6 +6,7 @@ import FlingKit
 /// Windows / Linux builds: arrows (hold to repeat), Return = OK, Delete = Back,
 /// Home, + / − volume — or W A S D (E = OK, Q = Back) when that scheme is picked, Space (play/pause while casting, OK otherwise),
 /// Shift+← / → seek, ⌘V pastes the clipboard text on the TV. Not paired yet but casting: ← / → seek, Space pauses.
+/// On the remote's Numbers page the digit keys type digits on the TV.
 ///
 /// Works like ScrollRemote: a local monitor, only for events in the panel's
 /// window, never while a text field ("Type on TV", pairing code) is being
@@ -57,6 +58,9 @@ final class KeyRemote {
     private static let repeatable: Set<UInt16> = [K.left, K.right, K.up, K.down,
                                                   K.equal, K.minus, K.padPlus, K.padMinus]
     private static let seekStep = 30
+    /// Digit keys, top row and keypad → 0…9: typed on the TV while the Numbers page is open.
+    private static let digits: [UInt16: Int] = [29: 0, 18: 1, 19: 2, 20: 3, 21: 4, 23: 5, 22: 6, 26: 7, 28: 8, 25: 9,
+                                                82: 0, 83: 1, 84: 2, 85: 3, 86: 4, 87: 5, 88: 6, 89: 7, 91: 8, 92: 9]
 
     init(state: AppState, isTarget: @escaping (NSEvent) -> Bool) {
         self.state = state
@@ -147,6 +151,13 @@ final class KeyRemote {
 
         if casting && shift && (key == K.left || key == K.right) {
             if !event.isARepeat { seek(key == K.right) }
+            return true
+        }
+        if state.tvPaired, RemoteMode.current == .num, !shift, let d = Self.digits[event.keyCode] {
+            if !event.isARepeat {
+                RemoteKeyFlash.post(ATVKeyCode.digit(d))
+                Task { await state.pressTVKey(ATVKeyCode.digit(d)) }
+            }
             return true
         }
         if state.tvPaired {
