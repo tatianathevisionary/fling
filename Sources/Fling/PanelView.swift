@@ -19,8 +19,10 @@ struct PanelView: View {
                     Separator()
                     RemoteView(state: state)
                     if let error = state.lastError {
+                        // Errors red, "…in progress" notes grey.
                         Text(tr(error))
-                            .font(.system(size: 10.5)).foregroundStyle(.orange)
+                            .font(.system(size: 10.5))
+                            .foregroundStyle(TVConnectionText.isProgressNote(error) ? Color.secondary : Color.red)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 14).padding(.vertical, 4)
                     }
