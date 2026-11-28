@@ -58,11 +58,13 @@ update.
    Chrome and Safari. That's how it reads the address of your current tab;
    it never touches page content.
 3. **Wait a moment** — the first network scan takes about ten seconds. Your
-   TV's name appears in the panel footer with a green dot when found.
+   TV's name appears in the panel footer with a green dot when it answers
+   (red: Fling can't reach it right now). Fling remembers the TV you chose
+   across restarts.
 4. **Open a video and hit ⌘⇧C** — the tab is on the TV.
 
 To unlock the TV controls (power, apps, d-pad, voice), do the one-time
-pairing: in the panel's **On the TV** section click **Set Up TV Power…** →
+pairing: in the panel's **On the TV** section click **Pair with TV** →
 the TV shows a 6-character code → type it into the panel → **Pair**.
 
 ## Casting
@@ -122,7 +124,9 @@ HDMI-CEC.
   macOS asks for microphone access the first time.
 
 **More than one TV?** The panel footer shows the active device; a **Switch**
-menu appears when several are on the network. Pairing is per-TV.
+menu appears when several are on the network. Pairing is per-TV. When the TV
+in use stops answering and another known TV does, the footer offers a
+one-click switch to it.
 
 ## Troubleshooting
 
@@ -130,8 +134,10 @@ menu appears when several are on the network. Pairing is per-TV.
 |---|---|
 | "No device found" in the footer | Same Wi-Fi network? Some routers isolate wireless clients ("AP isolation") which blocks discovery — check the router setting. The scan also takes ~10 s after the panel opens. |
 | "The TV did not respond" | The TV is in deep standby or unplugged. Click **Turn TV On** first, then retry. |
-| Pairing code rejected | Codes expire quickly. Run **Set Up TV Power…** again and type the fresh code. |
-| Remote worked before, now "Couldn't reach the TV" | A TV factory reset or OS update clears its paired remotes. Re-run **Set Up TV Power…**. |
+| Pairing code rejected | Codes expire quickly. Click **Pair with TV** again and type the fresh code. |
+| "Reconnecting to the TV…" | A TV that just woke up can refuse the first connections; Fling retries for about 12 s. Presses during that wait are dropped, not sent late. |
+| "The TV has forgotten this Mac" | A TV factory reset or OS update clears its paired remotes. Click **Pair with TV** and type the code from the TV. |
+| "The remote isn't answering" | The TV is off or on another network. Turn it on (or click **Turn TV On**) and try again. |
 | Typed text goes nowhere | The TV needs a text field focused on screen first — the protocol commits into the active field only. |
 | Mic button does nothing | System Settings → Privacy & Security → Microphone → enable Fling. |
 | Panel says "Fling needs catt" | The Cast engine is missing — rerun the install one-liner, or use the panel's **Copy install command**. |

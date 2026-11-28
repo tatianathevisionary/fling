@@ -87,6 +87,16 @@ injects silence.
 - **Exactly one `.disconnected`** reaches subscribers per lost session.
 - **Deadlines are real**: every await is bounded (`withATVDeadline` cancels
   the transport on expiry and reports `connectionTimeout` deterministically).
+- **A refused handshake isn't a verdict at once**: a TV that has just woken
+  up can abort the first TLS handshakes, which looks exactly like a TV that
+  forgot the certificate. For a paired TV, `AndroidTVRemote` retries after
+  2, 4 and 6 s; only then does it drop the pairing mark (the panel shows
+  **Pair with TV**). No second round for a TV that refused in the last
+  minute. While a retry waits, new commands throw `reconnecting`, and the
+  command that waited throws `commandDropped` — presses are dropped, never
+  delivered seconds late. Choosing another TV or starting a pairing stops
+  the wait (`superseded`). A dropped mark gets one later attempt; if the TV
+  accepts the certificate after all, the mark is restored.
 
 ## Diagnostics
 

@@ -39,8 +39,15 @@ property the UI renders and every user action lives here. Its rules:
   device scan arriving separately. `refreshStatus()` is the closed-panel
   poll: one `catt status`, nothing else.
 - **Errors are values.** Every failure ends in `lastError`, rendered by one
-  panel line. Remote-protocol failures additionally log to
-  `~/Library/Logs/Fling.log`.
+  panel line: red for errors, grey for "…in progress" notes. Remote-protocol
+  failures are shown in plain words (`TVConnectionText`); the raw error goes
+  to `~/Library/Logs/Fling.log`.
+- **Known TVs persist.** `DeviceMemory` keeps the chosen and known TVs in
+  UserDefaults. A failed or partial scan never swaps the chosen TV for
+  another one; a TV that moved to a new address is followed only when its
+  name is unique. `TVReachability` knocks on the Cast / remote ports for the
+  footer's online dot, and `SwitchAdvisor` offers another answering TV when
+  the chosen one misses two checks in a row.
 
 ## Process boundary
 

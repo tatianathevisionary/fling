@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A paired TV that refuses the remote's TLS handshake (common right after it
+  wakes up or restarts) is retried after 2, 4 and 6 s before Fling decides the
+  TV forgot this Mac; no second round for a TV that refused in the last
+  minute. Presses during the wait are dropped instead of arriving late, and
+  choosing another TV or starting a pairing stops the wait.
+- When the TV really has forgotten this Mac, the pairing mark is dropped and
+  the panel shows **Pair with TV** with a plain explanation; if the TV turns
+  out to trust the Mac after all, the next successful connect restores it.
+- The remote's errors are in plain words (raw network / certificate details
+  go to `~/Library/Logs/Fling.log`); errors are red, progress notes grey.
+- The chosen TV and the known TVs survive a restart; a failed TV search keeps
+  them, and a chosen TV missing from a search stays chosen (shown offline).
+- Mac-keyboard remote keys are no longer sent while the remote is unpaired;
+  the panel says once to pair.
+
+### Changed
+
+- The footer dot is a real reachability check (green / red / grey), and when
+  the TV in use is offline while another known TV answers, the footer offers
+  a one-click switch.
+- **Set Up TV Power…** is now **Pair with TV**.
+
 ## [1.0.0] - 2026-08-29
 
 ### Added
