@@ -249,6 +249,8 @@ public final class AppState: ObservableObject {
         interactionGeneration += 1
         selectedDevice = device
         lastError = nil
+        // A retry wait for the previous TV ends now.
+        await atv?.stopReconnecting()
         refreshTVPaired()
         await refresh()
     }
@@ -295,7 +297,7 @@ public final class AppState: ObservableObject {
     }
 
     public func castClipboard() async {
-        guard let raw = ClipboardReader.read() else { lastError = "Clipboard is empty"; return }
+        guard let raw = ClipboardReader.read() else { lastError = "There's no link on the clipboard."; return }
         await cast(raw, kind: URLClassifier.classify(raw))
     }
 
@@ -322,13 +324,13 @@ public final class AppState: ObservableObject {
 
     public func startTVPairing() async {
         guard let atv else { return }
-        guard let host = selectedDevice?.ip else { lastError = "No device selected"; return }
+        guard let host = selectedDevice?.ip else { lastError = TVConnectionText.noTV; return }
         tvPairing = .starting
         do {
             try await atv.startPairing(host: host)
             tvPairing = .waitingForPIN
         } catch {
-            tvPairing = .failed(Self.atvMessage(error))
+            tvPairing = .failed(Self.atvMessage(error) ?? TVConnectionText.generic)
         }
     }
 
@@ -340,7 +342,7 @@ public final class AppState: ObservableObject {
             tvPairing = .idle
             refreshTVPaired()
         } catch {
-            tvPairing = .failed(Self.atvMessage(error))
+            tvPairing = .failed(Self.atvMessage(error) ?? TVConnectionText.generic)
         }
     }
 
@@ -401,12 +403,13 @@ public final class AppState: ObservableObject {
     public func toggleVoiceSearch() async {
         if tvVoiceActive { await endVoiceSearch(); return }
         guard let atv else { return }
-        guard let host = selectedDevice?.ip else { lastError = "No device selected"; return }
+        guard let host = selectedDevice?.ip else { lastError = TVConnectionText.noTV; return }
         watchATVEvents()
         do {
             try await atv.beginVoice(host: host)
         } catch {
             lastError = Self.atvMessage(error)
+            if case ATVError.tlsHandshakeFailed = error { refreshTVPaired() }
             return
         }
         let capture = VoiceCapture()
@@ -418,7 +421,7 @@ public final class AppState: ObservableObject {
             // every later mic press on voiceSessionActive.
             feed.finish()
             try? await atv.endVoice()
-            lastError = Self.atvMessage(error)
+            lastError = error.localizedDescription
             return
         }
         // A single consumer keeps chunks in utterance order; a Task per chunk
@@ -454,14 +457,37 @@ public final class AppState: ObservableObject {
     /// consuming the event stream, and routes failures into `lastError`.
     private func sendATV(_ body: (AndroidTVRemote, String) async throws -> Void) async {
         guard let atv else { return }
-        guard let host = selectedDevice?.ip else { lastError = "No device selected"; return }
+        guard let host = selectedDevice?.ip else { lastError = TVConnectionText.noTV; return }
         watchATVEvents()
         do {
             try await body(atv, host)
             lastError = nil
+            if !tvPaired { refreshTVPaired() }       // the TV still trusted us: mark restored
         } catch {
             lastError = Self.atvMessage(error)
+            // The TV forgot this Mac (mark dropped): the panel shows "Pair with TV".
+            if case ATVError.tlsHandshakeFailed = error { refreshTVPaired() }
+            if case ATVError.notPaired = error { refreshTVPaired() }
         }
+    }
+
+    // MARK: - connection health
+
+    /// A remote key while the panel shows "Pair with TV". Nothing is sent into
+    /// the void: one attempt only when the TV may still trust this Mac,
+    /// otherwise say (once) what to press.
+    public func pressTVKeyUnpaired(_ code: Int32) async {
+        guard let atv, let host = selectedDevice?.ip else { lastError = TVConnectionText.noTV; return }
+        if await atv.mayTry(host: host) {
+            await pressTVKey(code)
+        } else if lastError != TVConnectionText.notPaired {
+            lastError = TVConnectionText.notPaired
+        }
+    }
+
+    private func atvSessionConnected() {
+        if lastError == TVConnectionText.reconnecting { lastError = nil }
+        if !tvPaired { refreshTVPaired() }
     }
 
     /// The TV pushes power flips over the open session; without this the row
@@ -471,7 +497,7 @@ public final class AppState: ObservableObject {
         atvEvents = Task { [weak self] in
             for await event in await atv.events() {
                 switch event {
-                case .connected: break
+                case .connected: self?.atvSessionConnected()
                 case .powerChanged(let on): self?.tvIsOn = on
                 case .appChanged(let package): self?.tvCurrentApp = package
                 case .volumeChanged(let level, let max, let muted):
@@ -490,31 +516,11 @@ public final class AppState: ObservableObject {
         }
     }
 
-    private static func atvMessage(_ error: Error) -> String {
-        switch error {
-        case ATVError.invalidPIN:
-            return "That code doesn't match — read it off the TV again."
-        case ATVError.serverStatus:
-            return "The TV rejected the pairing code. Start over."
-        case ATVError.tlsHandshakeFailed:
-            return "The TV no longer trusts this Mac — run TV power setup again."
-        case ATVError.connectionFailed(let detail):
-            return "Couldn't reach the TV (\(detail))."
-        case ATVError.connectionClosed:
-            return "The TV closed the connection during the handshake."
-        case ATVError.connectionTimeout:
-            return "The TV didn't answer."
-        case ATVError.certificateFailure(let detail):
-            return "Certificate problem (\(detail))."
-        case ATVError.notPaired, ATVError.pairingNotStarted:
-            return "Run TV power setup first."
-        case ATVError.voiceNotEnabled:
-            return "This TV session declined voice — use typed search instead."
-        case ATVError.voiceTimeout:
-            return "The TV didn't open voice search."
-        default:
-            return error.localizedDescription
-        }
+    /// Plain words instead of raw errors (the details go to the log); nil
+    /// when there is nothing to say (a press dropped while reconnecting).
+    private static func atvMessage(_ error: Error) -> String? {
+        ATVLog.shared.log("app", "remote error: \(error)")
+        return TVConnectionText.message(for: error)
     }
 
     /// Updates the slider immediately and sends the command once dragging

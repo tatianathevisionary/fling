@@ -106,7 +106,7 @@ private enum RU {
         "Pair once with the TV to unlock apps, the d-pad, and typing.":
             "Один раз свяжите Fling с ТВ — откроются приложения, стрелки и ввод текста.",
         "Turn TV On": "Включить ТВ",
-        "Set Up TV Power…": "Настроить питание ТВ…",
+        "Pair with TV": "Связать с ТВ",
         "ON THE TV": "НА ТВ",
         "TV is off": "ТВ выключен",
         "Turn TV off": "Выключить ТВ",
@@ -150,20 +150,32 @@ private enum RU {
         "TV sound: click to mute / unmute": "Звук ТВ: щёлкните, чтобы выключить / включить",
         // errors (FlingKit)
         "Clipboard is empty": "Буфер обмена пуст",
+        "There's no link on the clipboard.": "В буфере обмена нет ссылки.",
         "No device selected": "Устройство не выбрано",
         "catt is not installed": "catt не установлен",
         "That code doesn't match — read it off the TV again.": "Код не совпадает — посмотрите на экран ТВ ещё раз.",
         "The TV rejected the pairing code. Start over.": "ТВ отклонил код. Начните заново.",
-        "The TV no longer trusts this Mac — run TV power setup again.":
-            "ТВ больше не доверяет этому Mac — настройте питание ТВ заново.",
-        "The TV closed the connection during the handshake.": "ТВ разорвал соединение при подключении.",
-        "The TV didn't answer.": "ТВ не ответил.",
-        "Run TV power setup first.": "Сначала настройте питание ТВ.",
         "This TV session declined voice — use typed search instead.":
             "ТВ не принял голос — наберите запрос текстом.",
         "The TV didn't open voice search.": "ТВ не открыл голосовой поиск.",
         "The TV did not respond. Make sure it is awake, then try again.":
             "ТВ не отвечает. Убедитесь, что он включён, и попробуйте снова.",
+        // TV connection (FlingKit TVConnectionText)
+        "No TV found yet — check that the TV is on and on the same Wi-Fi as this Mac.":
+            "Телевизор пока не найден — проверьте, что он включён и в той же сети Wi-Fi, что и этот Mac.",
+        "The TV has forgotten this Mac — it happens after a TV reset or update. Click “Pair with TV” and type the code from the TV screen.":
+            "Телевизор забыл этот Mac — так бывает после сброса или обновления ТВ. Нажмите «Связать с ТВ» и введите код с экрана телевизора.",
+        "The remote isn't paired with the TV. Click “Pair with TV” and type the code from the TV screen.":
+            "Пульт не связан с телевизором. Нажмите «Связать с ТВ» и введите код с экрана ТВ.",
+        "The remote isn't answering: the TV is off or on another network. Try again when the TV is on.":
+            "Пульт не отвечает: телевизор выключен или в другой сети. Попробуйте ещё раз, когда ТВ включится.",
+        "The connection to the TV remote dropped. Press again to reconnect.":
+            "Связь с пультом ТВ прервалась. Нажмите ещё раз — Fling подключится заново.",
+        "The TV didn't answer in time. Try again.": "Телевизор не ответил вовремя. Попробуйте ещё раз.",
+        "Reconnecting to the TV…": "Подключаюсь к ТВ заново…",
+        "Fling couldn't prepare this Mac's remote key. Try “Pair with TV” again.":
+            "Fling не смог подготовить ключ пульта на этом Mac. Нажмите «Связать с ТВ» ещё раз.",
+        "The TV remote didn't work this time. Try again.": "Пульт ТВ сейчас не сработал. Попробуйте ещё раз.",
     ]
 
     static let patterns: [(NSRegularExpression, String)] = [
@@ -172,8 +184,6 @@ private enum RU {
         (#"^Volume — (\d+)%$"#, "Громкость — $1%"),
         (#"^Now: (.+)$"#, "Сейчас: $1"),
         (#"^Resume on TV at (.+)$"#, "Возобновить на ТВ с $1"),
-        (#"^Couldn't reach the TV \((.*)\)\.$"#, "Не удалось связаться с ТВ ($1)."),
-        (#"^Certificate problem \((.*)\)\.$"#, "Проблема с сертификатом ($1)."),
         (#"^Turn on (.+) ▸ Develop ▸ Allow JavaScript from Apple Events to resume videos where you left off\.$"#,
          "Включите в $1 ▸ Разработка ▸ «Разрешить JavaScript из событий Apple», чтобы видео продолжалось с того же места."),
         (#"^macOS asks separately for each app\. Fling needs (.+) so it can read the address of your frontmost tab\.$"#,
